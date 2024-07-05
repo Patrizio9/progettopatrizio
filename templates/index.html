@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoFame - Centro Commerciale</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { width: 80%; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #333; }
+        .nav-left { display: flex; align-items: center; }
+        .nav-right { display: flex; align-items: center; }
+        .username { color: #fff; margin-right: 10px; }
+        .logout-btn { padding: 5px 10px; background-color: #dc3545; color: #fff; border: none; cursor: pointer; }
+        .logout-btn:hover { background-color: #c82333; }
+        h1 { text-align: center; color: #333; }
+        .product-list, .cart { margin: 20px 0; }
+        .product { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ccc; }
+        .product img { width: 50px; height: 50px; margin-right: 10px; }
+        .product button { padding: 5px 10px; background-color: #28a745; color: #fff; border: none; cursor: pointer; }
+        .product button:hover { background-color: #218838; }
+        .cart-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ccc; }
+        .cart-item button { padding: 5px 10px; background-color: #dc3545; color: #fff; border: none; cursor: pointer; }
+        .cart-item button:hover { background-color: #c82333; }
+        .total { text-align: right; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <nav id="navbar">
+        <div class="nav-left">
+            <h1>HoFame</h1>
+        </div>
+        <div class="nav-right" id="nav-right">
+            {% if username %}
+                <div class="user-info">
+                    <span class="username">{{ username }}</span>
+                    <button class="logout-btn" onclick="window.location.href='/logout'">Logout</button>
+                </div>
+            {% else %}
+                <button onclick="window.location.href='/login.html'">Login</button>
+                <button onclick="window.location.href='/registra.html'">Registrazione</button>
+            {% endif %}
+        </div>
+    </nav>
+    <div class="container">
+        <div class="product-list">
+            <h2>Prodotti Disponibili</h2>
+            <div class="product">
+                <span><img src="https://healthy.thewom.it/wp-content/uploads/2023/05/pane.jpg" alt="Pane"> Pane</span>
+                <span>€1.00</span>
+                <button onclick="addToCart('Pane', 1.00)">Aggiungi al Carrello</button>
+            </div>
+            <div class="product">
+                <span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMZBHCaph9H4qAXW8NO-6i97lUIaRY0jfoiw&s" alt="Latte"> Latte</span>
+                <span>€1.50</span>
+                <button onclick="addToCart('Latte', 1.50)">Aggiungi al Carrello</button>
+            </div>
+            <div class="product">
+                <span><img src="https://www.melavi.it/images/core/ninejcache/ninejproduct/ninejproduct_10-red-delicious/red-delicious_700x700.jpg" alt="Mele"> Mele</span>
+                <span>€2.00</span>
+                <button onclick="addToCart('Mele', 2.00)">Aggiungi al Carrello</button>
+            </div>
+        </div>
+
+        <div class="cart">
+            <h2>Carrello</h2>
+            <div id="cart-items"></div>
+            <div class="total">Totale: €<span id="total">0.00</span></div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let total = 0;
+
+        function addToCart(productName, productPrice) {
+            const productIndex = cart.findIndex(item => item.name === productName);
+            if (productIndex > -1) {
+                cart[productIndex].quantity += 1;
+            } else {
+                cart.push({ name: productName, price: productPrice, quantity: 1 });
+            }
+            total += productPrice;
+            updateCart();
+        }
+
+        function removeFromCart(productName) {
+            const productIndex = cart.findIndex(item => item.name === productName);
+            if (productIndex > -1) {
+                const product = cart[productIndex];
+                total -= product.price * product.quantity;
+                cart.splice(productIndex, 1);
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartItemsDiv = document.getElementById('cart-items');
+            cartItemsDiv.innerHTML = '';
+
+            cart.forEach(product => {
+                const cartItemDiv = document.createElement('div');
+                cartItemDiv.className = 'cart-item';
+                cartItemDiv.innerHTML = `
+                    <span>${product.name} (x${product.quantity})</span>
+                    <span>€${(product.price * product.quantity).toFixed(2)}</span>
+                    <button onclick="removeFromCart('${product.name}')">Rimuovi</button>
+                `;
+                cartItemsDiv.appendChild(cartItemDiv);
+            });
+
+            document.getElementById('total').innerText = total.toFixed(2);
+        }
+    </script>
+</body>
+</html>
