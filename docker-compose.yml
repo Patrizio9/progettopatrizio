@@ -1,0 +1,36 @@
+version: '2.27.0'
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: Patriziogotti2003
+      MYSQL_DATABASE: hofamedb
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: Patriziogotti2003
+      DB_NAME: hofamedb
+    ports:
+      - "5003:5003"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
