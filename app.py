@@ -1,38 +1,21 @@
+import bcrypt
 from flask import Flask, render_template, request, redirect, url_for, session
 import mysql.connector
 from mysql.connector import Error
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Chiave segreta per gestire la sessione
 
-# Configurazione del database
+# Configurazione del database tramite variabili d'ambiente
 db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'port': 3306,
-    'password': 'Patriziogotti2003',
-    'database': 'hofamedb'
+    'host': os.environ.get('DB_HOST'),
+    'user': os.environ.get('DB_USER'),
+    'password': os.environ.get('DB_PASSWORD'),
+    'database': os.environ.get('DB_NAME')
 }
 
 # Creazione della tabella degli utenti all'avvio (se non esiste già)
-try:
-    conn = mysql.connector.connect(**db_config)
-    if conn.is_connected():
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(255) NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        conn.commit()
-        cursor.close()
-        conn.close()
-except Error as e:
-    print(f"Error: {e}")
-
 # Route per la homepage
 @app.route('/')
 def index():
@@ -59,11 +42,11 @@ def handle_login():
         conn = mysql.connector.connect(**db_config)
         if conn.is_connected():
             cursor = conn.cursor(dictionary=True)
-            cursor.execute('SELECT * FROM users WHERE username = %s AND password = %s', (username, password))
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
             user = cursor.fetchone()
 
-            if user:
-                # Se l'utente è trovato nel database, impostiamo la sessione
+            if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+                # Se l'utente è trovato nel database e la password è corretta, impostiamo la sessione
                 session['username'] = user['username']
                 session['user_id'] = user['id']
                 return redirect(url_for('index'))  # Reindirizza alla homepage dopo il login
@@ -83,12 +66,13 @@ def handle_login():
 def register():
     username = request.form['username']
     password = request.form['password']
-    
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
     try:
         conn = mysql.connector.connect(**db_config)
         if conn.is_connected():
             cursor = conn.cursor()
-            cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, password))
+            cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, hashed_password.decode('utf-8')))
             conn.commit()
             cursor.close()
             conn.close()
@@ -106,6 +90,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
-
+   app.run(debug=True, host='0.0.0.0', port=5003)
